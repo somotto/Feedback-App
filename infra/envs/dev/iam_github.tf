@@ -32,7 +32,7 @@ resource "aws_iam_role" "github_actions" {
         }
         StringLike = {
           
-          "token.actions.githubusercontent.com:sub" = "repo:Ngumonelson123/localhost-to-cloud:*"
+          "token.actions.githubusercontent.com:sub" = "repo:somotto/Feedback-App:*"
         }
       }
     }]
