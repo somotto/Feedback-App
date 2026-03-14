@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback Card</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      min-height: 100vh; gap: 1.5rem;
+      background-color: hsl(216, 12%, 8%);
+      font-family: 'Arial', sans-serif; padding: 2rem;
+    }
+    .card {
+      background: linear-gradient(to bottom, hsl(213, 19%, 18%), hsla(216, 12%, 54%, 0.1));
+      padding: 2rem; border-radius: 1.5rem; width: 100%; max-width: 340px;
+    }
+    .star-icon, .thank-you-img {
+      background-color: hsl(213, 19%, 25%); width: 40px; height: 40px;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; margin-bottom: 2rem;
+    }
+    .thank-you-img { width: 60px; height: 60px; margin: 0 auto; }
+    .fa-star, .fa-check-circle { color: hsl(25, 97%, 53%); }
+    .fa-check-circle { font-size: 2rem; }
+    h2 { color: white; margin-bottom: 1rem; }
+    p { color: hsl(217, 12%, 63%); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem; }
+    .rating-buttons { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+    .rating-btn {
+      background-color: hsl(213, 19%, 25%); border: none;
+      color: hsl(217, 12%, 63%); width: 45px; height: 45px;
+      border-radius: 50%; cursor: pointer; transition: all 0.3s ease;
+    }
+    .rating-btn:hover { background-color: hsl(25, 97%, 53%); color: white; }
+    .rating-btn:focus { outline: none; background-color: hsl(217, 12%, 63%); color: white; }
+    .rating-btn.selected { background-color: hsl(217, 12%, 63%); color: white; }
+    .submit-btn {
+      width: 100%; padding: 0.8rem;
+      background-color: hsl(25, 97%, 53%); border: none;
+      border-radius: 2rem; color: white; text-transform: uppercase;
+      letter-spacing: 0.2rem; cursor: pointer; transition: background-color 0.3s ease;
+    }
+    .submit-btn:hover { background-color: white; color: hsl(60, 2%, 8%); }
+    .hidden { display: none; }
+    .thank-you { text-align: center; }
+    .selected-rating {
+      background-color: hsl(215, 30%, 17%); color: hsl(25, 97%, 53%);
+      padding: 0.5rem 1rem; border-radius: 2rem;
+      display: inline-block; margin: 2rem 0;
+    }
+    .stats-card { color: hsl(217, 12%, 63%); font-size: 0.85rem; }
+    .stats-card h3 { color: white; margin-bottom: 1rem; font-size: 0.95rem; }
+    .stat-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center; }
+    .bar-wrap { flex: 1; margin: 0 0.75rem; background: hsl(213, 19%, 25%); border-radius: 4px; height: 6px; }
+    .bar { height: 6px; border-radius: 4px; background: hsl(25, 97%, 53%); transition: width 0.4s ease; }
+    .summary { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; }
+    .summary span { color: hsl(25, 97%, 53%); font-size: 1.4rem; font-weight: bold; }
+    .summary small { display: block; color: hsl(217, 12%, 63%); font-size: 0.75rem; }
+    .archive-list { max-height: 120px; overflow-y: auto; margin-top: 0.5rem; }
+    .archive-list li { list-style: none; padding: 0.25rem 0; border-bottom: 1px solid hsl(213, 19%, 25%); font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+
+  <!-- Rating card -->
+  <div class="card" id="rating-card">
+    <div class="star-icon"><span class="fa fa-star"></span></div>
+    <div>
+      <h2>How did we do?</h2>
+      <p>Please let us know how we did with your support request. All feedback is appreciated!</p>
+    </div>
+    <div class="rating-buttons">
+      <button class="rating-btn" value="1">1</button>
+      <button class="rating-btn" value="2">2</button>
+      <button class="rating-btn" value="3">3</button>
+      <button class="rating-btn" value="4">4</button>
+      <button class="rating-btn" value="5">5</button>
+    </div>
+    <button class="submit-btn" id="submit-rating">SUBMIT</button>
+  </div>
+
+  <!-- Thank you card -->
+  <div class="card thank-you hidden" id="thank-you-card">
+    <div class="thank-you-img"><span class="fa fa-check-circle"></span></div>
+    <div class="selected-rating">You selected <span id="rating-value"></span> out of 5</div>
+    <h2>Thank you!</h2>
+    <p>We appreciate you taking the time to give a rating. If you ever need more support, don't hesitate to get in touch!</p>
+    <button class="submit-btn" id="rate-again" style="margin-top:0">Rate Again</button>
+  </div>
+
+  <!-- Live stats card (RDS data) -->
+  <div class="card stats-card" id="stats-card">
+    <h3><span class="fa fa-bar-chart" style="color:hsl(25,97%,53%);margin-right:6px"></span>Live Ratings — RDS</h3>
+    <div class="summary">
+      <div><span id="stat-total">—</span><small>total</small></div>
+      <div><span id="stat-avg">—</span><small>avg score</small></div>
+    </div>
+    <div id="breakdown"></div>
+  </div>
+
+  <!-- S3 archive card -->
+  <div class="card stats-card" id="archive-card">
+    <h3><span class="fa fa-archive" style="color:hsl(25,97%,53%);margin-right:6px"></span>S3 Archive</h3>
+    <div id="archive-content">Loading...</div>
+  </div>
+
+  <script>
+    const ratingCard   = document.getElementById('rating-card');
+    const thankYouCard = document.getElementById('thank-you-card');
+    const ratingBtns   = document.querySelectorAll('.rating-btn');
+    const submitBtn    = document.getElementById('submit-rating');
+    const rateAgain    = document.getElementById('rate-again');
+    const ratingValue  = document.getElementById('rating-value');
+    let selectedRating = null;
+
+    ratingBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        ratingBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedRating = btn.value;
+      });
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      if (!selectedRating) { alert('Please select a rating before submitting'); return; }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      try {
+        const res = await fetch('/rating', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: parseInt(selectedRating) })
+        });
+        if (!res.ok) throw new Error('Submit failed');
+        ratingValue.textContent = selectedRating;
+        ratingCard.classList.add('hidden');
+        thankYouCard.classList.remove('hidden');
+        loadStats();
+        loadArchive();
+      } catch (err) {
+        alert('Error submitting rating: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'SUBMIT';
+      }
+    });
+
+    rateAgain.addEventListener('click', () => {
+      selectedRating = null;
+      ratingBtns.forEach(b => b.classList.remove('selected'));
+      thankYouCard.classList.add('hidden');
+      ratingCard.classList.remove('hidden');
+    });
+
+    async function loadStats() {
+      try {
+        const res  = await fetch('/ratings');
+        const data = await res.json();
+        document.getElementById('stat-total').textContent = data.summary.total;
+        document.getElementById('stat-avg').textContent   = data.summary.average || '—';
+        const max = Math.max(...(data.breakdown.map(r => parseInt(r.count))), 1);
+        document.getElementById('breakdown').innerHTML = [5,4,3,2,1].map(star => {
+          const row   = data.breakdown.find(r => r.rating === star);
+          const count = row ? parseInt(row.count) : 0;
+          const pct   = Math.round((count / max) * 100);
+          return `<div class="stat-row">
+            <span>${star} <span class="fa fa-star" style="font-size:0.7rem"></span></span>
+            <div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+            <span>${count}</span>
+          </div>`;
+        }).join('');
+      } catch { document.getElementById('breakdown').textContent = 'Could not load stats'; }
+    }
+
+    async function loadArchive() {
+      const el = document.getElementById('archive-content');
+      try {
+        const res  = await fetch('/ratings/archive');
+        const data = await res.json();
+        if (data.error) { el.textContent = data.error; return; }
+        el.innerHTML = `<p style="margin-bottom:0.5rem">Bucket: <strong style="color:white">${data.bucket}</strong> &nbsp;·&nbsp; ${data.count} file(s)</p>
+          <ul class="archive-list">${(data.files || []).map(f =>
+            `<li>${f.key} <span style="float:right">${new Date(f.lastModified).toLocaleString()}</span></li>`
+          ).join('')}</ul>`;
+      } catch { el.textContent = 'S3 archive unavailable'; }
+    }
+
+    loadStats();
+    loadArchive();
+  </script>
+</body>
+</html>
