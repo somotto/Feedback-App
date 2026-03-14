@@ -174,7 +174,6 @@ git push to main
 | `/healthz` | Health check (no DB) — used by ALB |
 | `/db-check` | RDS connectivity test |
 | `/ratings` | Get all ratings + summary stats |
-| `/rating` | POST — submit a rating (1–5) |
 
 ---
 
