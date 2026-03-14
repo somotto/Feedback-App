@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>From Localhost to Cloud:Architecting and Deploying Scalable Systems AWS </title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #f97316, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      margin-top: 8px;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .arch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 48px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .arch span {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #cbd5e1;
+    }
+
+    .arch .arrow { color: #f97316; font-size: 1rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-ok   { background: #14532d; color: #4ade80; }
+    .badge-fail { background: #450a0a; color: #f87171; }
+    .badge-wait { background: #1e3a5f; color: #60a5fa; }
+
+    .result {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      min-height: 80px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    button {
+      margin-top: 14px;
+      background: #f97316;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #ea6c0a; }
+    button:disabled { background: #475569; cursor: not-allowed; }
+
+    .stack-info {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 900px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .stack-info h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #f8fafc;
+    }
+
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .stack-item {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .stack-item .label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stack-item .value { font-size: 0.9rem; color: #f97316; font-weight: 600; margin-top: 4px; }
+
+    footer {
+      margin-top: 48px;
+      color: #334155;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>AWS UG AI/ML User Group</h1>
+    <p>Production-Ready AWS Deployment — Live Demo</p>
+  </header>
+
+  <div class="arch">
+    <span>You</span><span class="arrow">→</span>
+    <span>CloudFront</span><span class="arrow">→</span>
+    <span>S3 (this page)</span>
+    <br style="width:100%">
+    <span>You</span><span class="arrow">→</span>
+    <span>CloudFront /api/*</span><span class="arrow">→</span>
+    <span>ALB</span><span class="arrow">→</span>
+    <span>ECS (Node.js)</span><span class="arrow">→</span>
+    <span>RDS Postgres</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- API Health Check -->
+    <div class="card">
+      <h2>
+        API Health Check
+        <span class="badge badge-wait" id="health-badge">PENDING</span>
+      </h2>
+      <div class="result" id="health-result">Click to test...</div>
+      <button id="health-btn" onclick="checkHealth()">Test /healthz</button>
+    </div>
+
+    <!-- DB Connectivity -->
+    <div class="card">
+      <h2>
+        Database Check
+        <span class="badge badge-wait" id="db-badge">PENDING</span>
+      </h2>
+      <div class="result" id="db-result">Click to test...</div>
+      <button id="db-btn" onclick="checkDB()">Test /db-check</button>
+    </div>
+
+    <!-- Root Endpoint -->
+    <div class="card">
+      <h2>
+        Root Endpoint
+        <span class="badge badge-wait" id="root-badge">PENDING</span>
+      </h2>
+      <div class="result" id="root-result">Click to test...</div>
+      <button id="root-btn" onclick="checkRoot()">Test /</button>
+    </div>
+
+    <!-- Run All -->
+    <div class="card">
+      <h2>⚡ Run All Tests</h2>
+      <div class="result" id="all-result">Hit the button to test the full stack end-to-end.</div>
+      <button onclick="runAll()">Test Everything</button>
+    </div>
+
+  </div>
+
+  <div class="stack-info">
+    <h2>Stack Running Right Now</h2>
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="label">Frontend</div>
+        <div class="value">S3 + CloudFront</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">API</div>
+        <div class="value">ECS on EC2</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">Load Balancer</div>
+        <div class="value">ALB</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">Database</div>
+        <div class="value">RDS PostgreSQL</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">Container Registry</div>
+        <div class="value">ECR</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">Secrets</div>
+        <div class="value">Secrets Manager</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">IaC</div>
+        <div class="value">Terraform</div>
+      </div>
+      <div class="stack-item">
+        <div class="label">CI/CD</div>
+        <div class="value">GitHub Actions</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Served from S3 via CloudFront &nbsp;·&nbsp; API running on ECS &nbsp;·&nbsp; All infra provisioned by Terraform</p>
+  </footer>
+
+  <script>
+    const API_BASE = '';
+
+    async function callAPI(path, badgeId, resultId, btnId) {
+      const badge  = document.getElementById(badgeId);
+      const result = document.getElementById(resultId);
+      const btn    = document.getElementById(btnId);
+
+      btn.disabled = true;
+      badge.className = 'badge badge-wait';
+      badge.textContent = 'LOADING';
+      result.textContent = 'Calling ' + path + ' ...';
+
+      try {
+        const res  = await fetch(API_BASE + path);
+        const data = await res.json();
+        result.textContent = JSON.stringify(data, null, 2);
+        badge.className = res.ok ? 'badge badge-ok' : 'badge badge-fail';
+        badge.textContent = res.ok ? 'OK ' + res.status : 'ERROR ' + res.status;
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+        badge.className = 'badge badge-fail';
+        badge.textContent = 'FAILED';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function checkHealth() { callAPI('/healthz',  'health-badge', 'health-result', 'health-btn'); }
+    function checkDB()     { callAPI('/db-check',  'db-badge',     'db-result',     'db-btn');     }
+    function checkRoot()   { callAPI('/',           'root-badge',   'root-result',   'root-btn');   }
+
+    async function runAll() {
+      const out = document.getElementById('all-result');
+      out.textContent = 'Running all tests...\n';
+      await checkHealth();
+      await checkDB();
+      await checkRoot();
+      out.textContent = 'All tests complete — check each card above.';
+    }
+  </script>
+
+</body>
+</html>
